@@ -44,23 +44,21 @@ if (!isset($_SESSION['user_id'])) {
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
         .listing-container {
+            margin-top: 20px;
+        }
+        .listing-item {
             display: flex;
             justify-content: space-between;
-        }
-        .listing {
-            width: 48%;
-        }
-        .card {
-            margin-bottom: 15px;
-            border: none;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
-        .btn-primary {
-            background-color: #007bff;
-            border: none;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
+        .btn-action {
+            width: 120px;
         }
     </style>
 </head>
@@ -110,36 +108,33 @@ if (!isset($_SESSION['user_id'])) {
     </div>
 
     <!-- Listings -->
-    <div class="container">
-        <div class="listing-container">
-            <!-- Buy Ads -->
-            <div class="listing" id="buy-listing">
-                <h4>Buy Ads</h4>
-                <div id="buying-ads">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">User1</h5>
-                            <p class="card-text">Payment Method: PayPal</p>
-                            <p class="card-text">Amount: $100</p>
-                            <button class="btn btn-primary">Contact</button>
-                        </div>
-                    </div>
+    <div class="container listing-container">
+        <!-- Buy Listings -->
+        <div id="buy-listing">
+            <h4>Buy Ads</h4>
+            <div class="listing-item">
+                <div>
+                    <p><strong>User1</strong></p>
+                    <p>Payment Method: PayPal</p>
+                    <p>Amount: $100</p>
                 </div>
+                <button class="btn btn-primary btn-action" onclick="goToTransaction('buy', 100)">Buy</button>
             </div>
-            <!-- Sell Ads -->
-            <div class="listing" id="sell-listing" style="display: none;">
-                <h4>Sell Ads</h4>
-                <div id="selling-ads">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">User2</h5>
-                            <p class="card-text">Payment Method: Bank Transfer</p>
-                            <p class="card-text">Amount: $200</p>
-                            <button class="btn btn-primary">Contact</button>
-                        </div>
-                    </div>
+            <!-- Add more buy listings here -->
+        </div>
+
+        <!-- Sell Listings -->
+        <div id="sell-listing" style="display: none;">
+            <h4>Sell Ads</h4>
+            <div class="listing-item">
+                <div>
+                    <p><strong>User2</strong></p>
+                    <p>Payment Method: Bank Transfer</p>
+                    <p>Amount: $200</p>
                 </div>
+                <button class="btn btn-success btn-action" onclick="goToTransaction('sell', 200)">Sell</button>
             </div>
+            <!-- Add more sell listings here -->
         </div>
     </div>
 
@@ -173,6 +168,11 @@ if (!isset($_SESSION['user_id'])) {
                 sellListing.style.display = 'block';
                 buyListing.style.display = 'none';
             }
+        }
+
+        function goToTransaction(type, amount) {
+            const url = type === 'buy' ? 'buy_xmr.php' : 'sell_xmr.php';
+            window.location.href = `${url}?amount=${amount}`;
         }
 
         function filterAds() {
