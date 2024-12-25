@@ -49,6 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-primary:hover {
             background-color: #0056b3;
         }
+        .password-toggle {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -62,9 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="username" class="form-label">Username</label>
                 <input type="text" class="form-control" id="username" name="username" required>
             </div>
-            <div class="mb-3">
+            <div class="mb-3 position-relative">
                 <label for="password" class="form-label">Password</label>
                 <input type="password" class="form-control" id="password" name="password" required>
+                <span class="password-toggle position-absolute top-50 end-0 translate-middle-y me-3">👁️</span>
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
             <div class="text-center mt-3">
@@ -72,5 +76,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
     </div>
+    <script>
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.querySelector('.password-toggle');
+
+        passwordToggle.addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            passwordToggle.textContent = type === 'password' ? '👁️' : '👁‍🗨';
+        });
+    </script>
 </body>
 </html>
