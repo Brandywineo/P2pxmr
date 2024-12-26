@@ -74,6 +74,7 @@ if (!isset($_SESSION['user_id'])) {
     <div class="toggle-buttons">
         <button id="buy-button" class="btn btn-primary" onclick="toggleView('buy')">Buy</button>
         <button id="sell-button" class="btn btn-outline-primary" onclick="toggleView('sell')">Sell</button>
+        <button id="create-ad-button" class="btn btn-outline-success" onclick="navigateTo('create_ad')">+ Create Ad</button>
     </div>
 
     <!-- Filter Card -->
@@ -120,7 +121,6 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
                 <button class="btn btn-primary btn-action" onclick="goToTransaction('buy', 100)">Buy</button>
             </div>
-            <!-- Add more buy listings here -->
         </div>
 
         <!-- Sell Listings -->
@@ -134,7 +134,6 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
                 <button class="btn btn-success btn-action" onclick="goToTransaction('sell', 200)">Sell</button>
             </div>
-            <!-- Add more sell listings here -->
         </div>
     </div>
 
@@ -144,6 +143,8 @@ if (!isset($_SESSION['user_id'])) {
                 window.location.href = 'wallet.php';
             } else if (section === 'profile') {
                 window.location.href = 'profile.php';
+            } else if (section === 'create_ad') {
+                window.location.href = 'create_ad.php';
             }
         }
 
