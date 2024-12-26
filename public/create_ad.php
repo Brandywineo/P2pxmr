@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Include database connection
-require 'db_connect.php';
+require 'src/config/db.php'; // Corrected path
 
 $message = "";
 
@@ -17,12 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
 
     if (!empty($ad_type) && !empty($amount) && !empty($payment_method)) {
-        // Insert the ad into the database
-        $stmt = $conn->prepare("INSERT INTO ads (user_id, ad_type, amount, payment_method) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("isss", $user_id, $ad_type, $amount, $payment_method);
-        if ($stmt->execute()) {
+        try {
+            // Insert the ad into the database
+            $stmt = $pdo->prepare("INSERT INTO ads (user_id, ad_type, amount, payment_method) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$user_id, $ad_type, $amount, $payment_method]);
             $message = "Ad created successfully!";
-        } else {
+        } catch (Exception $e) {
             $message = "Error creating ad. Please try again.";
         }
     } else {
@@ -46,7 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 600px;
             padding: 20px;
             border: none;
+            border-radius: 8px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
         }
     </style>
 </head>
@@ -61,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3">
                     <label for="ad_type" class="form-label">Ad Type</label>
                     <select class="form-select" id="ad_type" name="ad_type" required>
+                        <option value="">Select Ad Type</option>
                         <option value="buy">Buy</option>
                         <option value="sell">Sell</option>
                     </select>
@@ -72,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3">
                     <label for="payment_method" class="form-label">Payment Method</label>
                     <select class="form-select" id="payment_method" name="payment_method" required>
+                        <option value="">Select Payment Method</option>
                         <option value="bank_transfer">Bank Transfer</option>
                         <option value="paypal">PayPal</option>
                         <option value="crypto">Crypto Wallet</option>
