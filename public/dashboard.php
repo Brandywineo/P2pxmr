@@ -5,14 +5,14 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Include database connection
-require 'db_connect.php';
+// Include the correct database connection
+require '../src/config/db.php';
 
 // Fetch Buy Ads
-$buy_ads = $conn->query("SELECT * FROM ads WHERE ad_type = 'buy' ORDER BY created_at DESC");
+$buy_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'buy' ORDER BY created_at DESC");
 
 // Fetch Sell Ads
-$sell_ads = $conn->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY created_at DESC");
+$sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY created_at DESC");
 ?>
 
 <!DOCTYPE html>
@@ -96,10 +96,10 @@ $sell_ads = $conn->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY crea
             <!-- Buy Listings -->
             <div id="buy-listing">
                 <h4>Buy Ads</h4>
-                <?php while ($buy_ad = $buy_ads->fetch_assoc()) { ?>
+                <?php while ($buy_ad = $buy_ads->fetch(PDO::FETCH_ASSOC)) { ?>
                     <div class="listing-item">
                         <div>
-                            <p><strong>User ID: <?php echo $buy_ad['user_id']; ?></strong></p>
+                            <p><strong>User ID: <?php echo htmlspecialchars($buy_ad['user_id']); ?></strong></p>
                             <p>Payment Method: <?php echo htmlspecialchars($buy_ad['payment_method']); ?></p>
                             <p>Amount: $<?php echo htmlspecialchars($buy_ad['amount']); ?></p>
                         </div>
@@ -111,10 +111,10 @@ $sell_ads = $conn->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY crea
             <!-- Sell Listings -->
             <div id="sell-listing" style="display: none;">
                 <h4>Sell Ads</h4>
-                <?php while ($sell_ad = $sell_ads->fetch_assoc()) { ?>
+                <?php while ($sell_ad = $sell_ads->fetch(PDO::FETCH_ASSOC)) { ?>
                     <div class="listing-item">
                         <div>
-                            <p><strong>User ID: <?php echo $sell_ad['user_id']; ?></strong></p>
+                            <p><strong>User ID: <?php echo htmlspecialchars($sell_ad['user_id']); ?></strong></p>
                             <p>Payment Method: <?php echo htmlspecialchars($sell_ad['payment_method']); ?></p>
                             <p>Amount: $<?php echo htmlspecialchars($sell_ad['amount']); ?></p>
                         </div>
