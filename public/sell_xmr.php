@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Include database connection
-require 'db_connect.php';
+require_once '../src/config/db.php';
 
 // Get amount from query parameter
 $amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 0;
@@ -18,9 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $total_earnings = $amount_to_sell * $usd_rate;
 
     // Insert transaction into database
-    $stmt = $conn->prepare("INSERT INTO transactions (user_id, ad_type, amount, usd_amount) VALUES (?, 'sell', ?, ?)");
-    $stmt->bind_param("idd", $_SESSION['user_id'], $amount_to_sell, $total_earnings);
-    $stmt->execute();
+    $stmt = $pdo->prepare("INSERT INTO transactions (user_id, ad_type, amount, usd_amount) VALUES (:user_id, 'sell', :amount, :usd_amount)");
+    $stmt->execute([
+        ':user_id' => $_SESSION['user_id'],
+        ':amount' => $amount_to_sell,
+        ':usd_amount' => $total_earnings
+    ]);
 
     header("Location: dashboard.php?success=Transaction completed.");
     exit;
