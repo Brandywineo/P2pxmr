@@ -8,40 +8,29 @@ if (!isset($_SESSION['user_id'])) {
 // Include database connection
 require '../src/config/db.php';
 
-// Initialize variables
-$message = "";
-
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $ad_type = $_POST['ad_type']; // "buy" or "sell"
-    $amount_usd = $_POST['amount_usd'];
-    $amount_xmr = $_POST['amount_xmr'];
-    $payment_method = $_POST['payment_method'];
     $user_id = $_SESSION['user_id'];
+    $ad_type = $_POST['ad_type'];
+    $amount = $_POST['amount'];
+    $currency = $_POST['currency'];
+    $payment_method = $_POST['payment_method'];
 
-    // Validate input
-    if (!empty($ad_type) && (!empty($amount_usd) || !empty($amount_xmr)) && !empty($payment_method)) {
-        // Store the amount in USD or XMR
-        $amount = $amount_usd ? $amount_usd : $amount_xmr;
+    // Convert amount to Monero if in USD
+    if ($currency === 'usd') {
+        $stmt = $pdo->query("SELECT price_usd FROM xmr_price ORDER BY updated_at DESC LIMIT 1");
+        $xmr_price = $stmt->fetch(PDO::FETCH_ASSOC)['price_usd'];
+        $amount = $amount / $xmr_price;
+    }
 
-        // Insert the ad into the database
-        $stmt = $pdo->prepare("INSERT INTO ads (user_id, ad_type, amount, payment_method) VALUES (?, ?, ?, ?)");
-        if ($stmt->execute([$user_id, $ad_type, $amount, $payment_method])) {
-            $message = "Ad created successfully!";
-            header("Location: profile.php");
-            exit;
-        } else {
-            $message = "Error creating ad. Please try again.";
-        }
+    $stmt = $pdo->prepare("INSERT INTO ads (user_id, ad_type, amount, payment_method) VALUES (?, ?, ?, ?)");
+    if ($stmt->execute([$user_id, $ad_type, $amount, $payment_method])) {
+        header("Location: profile.php");
+        exit;
     } else {
-        $message = "All fields are required.";
+        $error_message = "Failed to create the ad. Please try again.";
     }
 }
-
-// Fetch the latest Monero price
-$price_stmt = $pdo->query("SELECT price_usd FROM monero_price ORDER BY updated_at DESC LIMIT 1");
-$price_data = $price_stmt->fetch(PDO::FETCH_ASSOC);
-$monero_price = $price_data ? $price_data['price_usd'] : 'N/A';
 ?>
 
 <!DOCTYPE html>
@@ -55,12 +44,9 @@ $monero_price = $price_data ? $price_data['price_usd'] : 'N/A';
         body {
             background-color: #f8f9fa;
         }
-        .card {
-            margin: 50px auto;
-            max-width: 800px;
-            padding: 20px;
-            border: none;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
         }
         .tabs {
             display: flex;
@@ -71,92 +57,71 @@ $monero_price = $price_data ? $price_data['price_usd'] : 'N/A';
             padding: 10px 20px;
             cursor: pointer;
             border: 1px solid #ddd;
-            background-color: #f8f9fa;
+            border-bottom: none;
+            background-color: #fff;
         }
         .tab.active {
             background-color: #007bff;
-            color: white;
+            color: #fff;
         }
-        .price-info {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 15px;
+        .tab-content {
+            border: 1px solid #ddd;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .error-message {
+            color: red;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header bg-dark text-white p-3 d-flex justify-content-between">
-        <div onclick="location.href='profile.php'" style="cursor: pointer;">Profile</div>
-        <div>Monero Price: $<?php echo htmlspecialchars($monero_price); ?></div>
-        <div onclick="location.href='wallet.php'" style="cursor: pointer;">Wallet</div>
-    </div>
+<div class="container">
+    <h1 class="text-center">Create Ad</h1>
+    <?php if (isset($error_message)): ?>
+        <p class="error-message"><?php echo htmlspecialchars($error_message); ?></p>
+    <?php endif; ?>
 
-    <!-- Main Content -->
-    <div class="container">
-        <div class="card">
-            <h4 class="text-center mb-4">Create New Ad</h4>
-            <?php if (!empty($message)) { ?>
-                <div class="alert alert-info"><?php echo htmlspecialchars($message); ?></div>
-            <?php } ?>
-
-            <!-- Ad Type Tabs -->
-            <div class="tabs">
-                <div id="buy-tab" class="tab active" onclick="selectTab('buy')">Buy</div>
-                <div id="sell-tab" class="tab" onclick="selectTab('sell')">Sell</div>
-            </div>
-
-            <!-- Form -->
-            <form method="POST">
-                <input type="hidden" id="ad_type" name="ad_type" value="buy">
-                <div class="price-info">Current Monero Price: $<?php echo htmlspecialchars($monero_price); ?></div>
-
-                <!-- Amount -->
-                <div class="mb-3">
-                    <label class="form-label">Amount</label>
-                    <div class="d-flex gap-2">
-                        <input type="number" class="form-control" id="amount_usd" name="amount_usd" placeholder="Enter amount in USD">
-                        <input type="number" class="form-control" id="amount_xmr" name="amount_xmr" placeholder="Enter amount in XMR">
-                    </div>
-                </div>
-
-                <!-- Payment Method -->
-                <div class="mb-3">
-                    <label for="payment_method" class="form-label">Payment Method</label>
-                    <select class="form-select" id="payment_method" name="payment_method" required>
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="paypal">PayPal</option>
-                        <option value="crypto">Crypto Wallet</option>
-                        <option value="venmo">Venmo</option>
-                        <option value="cashapp">Cash App</option>
-                        <option value="skrill">Skrill</option>
-                        <option value="western_union">Western Union</option>
-                        <option value="zelle">Zelle</option>
-                        <option value="alipay">Alipay</option>
+    <form method="POST" action="create_ad.php">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('buy')">Buy</div>
+            <div class="tab" onclick="switchTab('sell')">Sell</div>
+        </div>
+        <div class="tab-content">
+            <input type="hidden" name="ad_type" id="ad_type" value="buy">
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <div class="input-group">
+                    <input type="number" step="0.00000001" name="amount" id="amount" class="form-control" required>
+                    <select name="currency" class="form-select">
+                        <option value="xmr">Monero (XMR)</option>
+                        <option value="usd">USD</option>
                     </select>
                 </div>
-
-                <button type="submit" class="btn btn-primary w-100">Create Ad</button>
-            </form>
+            </div>
+            <div class="mb-3">
+                <label for="payment_method" class="form-label">Payment Method</label>
+                <select name="payment_method" id="payment_method" class="form-select" required>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cash">Cash</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Create Ad</button>
         </div>
-    </div>
+    </form>
+</div>
 
-    <script>
-        function selectTab(type) {
-            const buyTab = document.getElementById('buy-tab');
-            const sellTab = document.getElementById('sell-tab');
-            const adTypeInput = document.getElementById('ad_type');
-
-            if (type === 'buy') {
-                buyTab.classList.add('active');
-                sellTab.classList.remove('active');
-                adTypeInput.value = 'buy';
-            } else {
-                sellTab.classList.add('active');
-                buyTab.classList.remove('active');
-                adTypeInput.value = 'sell';
-            }
+<script>
+    function switchTab(type) {
+        document.getElementById('ad_type').value = type;
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        if (type === 'buy') {
+            tabs[0].classList.add('active');
+        } else {
+            tabs[1].classList.add('active');
         }
-    </script>
+    }
+</script>
 </body>
 </html>
