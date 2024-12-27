@@ -13,6 +13,11 @@ $buy_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'buy' ORDER BY created
 
 // Fetch Sell Ads
 $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY created_at DESC");
+
+// Fetch Monero price from the database
+$price_stmt = $pdo->query("SELECT price_usd FROM monero_price ORDER BY updated_at DESC LIMIT 1");
+$price_data = $price_stmt->fetch(PDO::FETCH_ASSOC);
+$monero_price = $price_data ? $price_data['price_usd'] : 'N/A';
 ?>
 
 <!DOCTYPE html>
@@ -37,19 +42,23 @@ $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY creat
         .header .icon {
             cursor: pointer;
         }
+        .header .price {
+            font-weight: bold;
+            font-size: 18px;
+        }
         .filters {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
             margin: 20px 0;
         }
         .listings {
             display: flex;
-            gap: 20px;
+            flex-direction: column;
+            gap: 15px;
         }
-        .listings > div {
-            flex: 1;
-            background-color: white;
+        .card {
+            width: 100%;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -58,15 +67,6 @@ $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY creat
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e9ecef;
-            padding: 10px 0;
-        }
-        .listing-item:last-child {
-            border-bottom: none;
-        }
-        .btn-action {
-            padding: 5px 15px;
-            font-size: 14px;
         }
     </style>
 </head>
@@ -76,8 +76,8 @@ $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY creat
         <div class="icon" onclick="location.href='profile.php'">
             <i class="bi bi-person-circle"></i> Profile
         </div>
-        <div class="icon" onclick="location.href='create_ad.php'">
-            <i class="bi bi-plus-circle"></i> Create Ad
+        <div class="icon price">
+            Monero Price: $<?php echo htmlspecialchars($monero_price); ?>
         </div>
         <div class="icon" onclick="location.href='wallet.php'">
             <i class="bi bi-wallet2"></i> Wallet
@@ -89,6 +89,9 @@ $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY creat
         <div class="filters">
             <button class="btn btn-primary" onclick="showListings('buy')">Buy</button>
             <button class="btn btn-secondary" onclick="showListings('sell')">Sell</button>
+            <button class="btn btn-success" onclick="location.href='create_ad.php'">
+                <i class="bi bi-plus-circle"></i> Create Ad
+            </button>
         </div>
 
         <!-- Listings -->
@@ -97,13 +100,15 @@ $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY creat
             <div id="buy-listing">
                 <h4>Buy Ads</h4>
                 <?php while ($buy_ad = $buy_ads->fetch(PDO::FETCH_ASSOC)) { ?>
-                    <div class="listing-item">
-                        <div>
-                            <p><strong>User ID: <?php echo htmlspecialchars($buy_ad['user_id']); ?></strong></p>
-                            <p>Payment Method: <?php echo htmlspecialchars($buy_ad['payment_method']); ?></p>
-                            <p>Amount: $<?php echo htmlspecialchars($buy_ad['amount']); ?></p>
+                    <div class="card">
+                        <div class="listing-item">
+                            <div>
+                                <p><strong>User ID:</strong> <?php echo htmlspecialchars($buy_ad['user_id']); ?></p>
+                                <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($buy_ad['payment_method']); ?></p>
+                                <p><strong>Amount:</strong> $<?php echo htmlspecialchars($buy_ad['amount']); ?></p>
+                            </div>
+                            <button class="btn btn-primary btn-action" onclick="goToTransaction('buy', <?php echo $buy_ad['amount']; ?>)">Buy</button>
                         </div>
-                        <button class="btn btn-primary btn-action" onclick="goToTransaction('buy', <?php echo $buy_ad['amount']; ?>)">Buy</button>
                     </div>
                 <?php } ?>
             </div>
@@ -112,13 +117,15 @@ $sell_ads = $pdo->query("SELECT * FROM ads WHERE ad_type = 'sell' ORDER BY creat
             <div id="sell-listing" style="display: none;">
                 <h4>Sell Ads</h4>
                 <?php while ($sell_ad = $sell_ads->fetch(PDO::FETCH_ASSOC)) { ?>
-                    <div class="listing-item">
-                        <div>
-                            <p><strong>User ID: <?php echo htmlspecialchars($sell_ad['user_id']); ?></strong></p>
-                            <p>Payment Method: <?php echo htmlspecialchars($sell_ad['payment_method']); ?></p>
-                            <p>Amount: $<?php echo htmlspecialchars($sell_ad['amount']); ?></p>
+                    <div class="card">
+                        <div class="listing-item">
+                            <div>
+                                <p><strong>User ID:</strong> <?php echo htmlspecialchars($sell_ad['user_id']); ?></p>
+                                <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($sell_ad['payment_method']); ?></p>
+                                <p><strong>Amount:</strong> $<?php echo htmlspecialchars($sell_ad['amount']); ?></p>
+                            </div>
+                            <button class="btn btn-success btn-action" onclick="goToTransaction('sell', <?php echo $sell_ad['amount']; ?>)">Sell</button>
                         </div>
-                        <button class="btn btn-success btn-action" onclick="goToTransaction('sell', <?php echo $sell_ad['amount']; ?>)">Sell</button>
                     </div>
                 <?php } ?>
             </div>
