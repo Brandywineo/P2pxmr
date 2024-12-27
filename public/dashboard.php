@@ -5,15 +5,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Include database connection
-require '../src/config/db.php'; // Correct path to the database file
-
-// Fetch the username
-$user_id = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-$username = $user ? $user['username'] : 'User';
+// Include the correct database connection
+require '../src/config/db.php';
 ?>
 
 <!DOCTYPE html>
@@ -28,150 +21,152 @@ $username = $user ? $user['username'] : 'User';
         body {
             background-color: #f8f9fa;
         }
+
         .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: #343a40;
+            color: white;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
-            background-color: #343a40;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            transition: top 0.3s ease;
+            padding: 15px 20px;
+            transition: top 0.3s;
         }
+
         .header.hidden {
-            top: -80px;
+            top: -60px;
         }
-        .filters, .action-buttons {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .listing-card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
+
+        .filters {
+            background-color: white;
             padding: 15px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
-        .listing-card:hover {
-            transform: scale(1.02);
+
+        .ad-listings {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
-        .infinite-scroll {
-            overflow-y: auto;
-            max-height: calc(100vh - 250px);
+
+        .ad-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ad-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary, .btn-secondary, .btn-success {
+            width: 100%;
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
     <!-- Header -->
-    <div class="header">
-        <div class="icon">
-            <i class="bi bi-person-circle"></i> Welcome, <?php echo htmlspecialchars($username); ?>
+    <div class="header" id="header">
+        <div onclick="location.href='profile.php'" style="cursor: pointer;">
+            <i class="bi bi-person-circle"></i> Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>
         </div>
-        <div class="icon" onclick="location.href='wallet.php'">
-            <i class="bi bi-wallet2"></i>
+        <div onclick="location.href='wallet.php'" style="cursor: pointer;">
+            <i class="bi bi-wallet2"></i> Wallet
         </div>
     </div>
 
+    <!-- Filter Buttons -->
     <div class="container">
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="btn btn-primary" onclick="location.href='create_ad.php'">
+        <div class="filters">
+            <button class="btn btn-primary" onclick="filterAds('buy')">Buy</button>
+            <button class="btn btn-secondary" onclick="filterAds('sell')">Sell</button>
+            <button class="btn btn-success" onclick="location.href='create_ad.php'">
                 <i class="bi bi-plus-circle"></i> Create Ad
             </button>
         </div>
 
-        <!-- Filters -->
-        <div class="filters">
-            <select class="form-select w-auto d-inline-block" id="sortFilter">
-                <option value="cheapest">Cheapest to Most Expensive</option>
-                <option value="expensive">Most Expensive to Cheapest</option>
-            </select>
-            <input type="text" class="form-control w-auto d-inline-block" id="searchFilter" placeholder="Search...">
-        </div>
-
-        <!-- Listings -->
-        <div class="infinite-scroll" id="adListings">
-            <!-- Ads will load here dynamically -->
+        <!-- Ad Listings -->
+        <div class="ad-listings" id="ad-listings">
+            <!-- Ads will be loaded dynamically here -->
         </div>
     </div>
 
     <script>
-        let lastLoadedAdId = 0;
-        const adListings = document.getElementById('adListings');
-        const header = document.querySelector('.header');
-        let lastScrollTop = 0;
+        let lastId = 0;
+        let currentFilter = 'buy';
 
-        // Fetch Ads with Infinite Scrolling
-        function fetchAds() {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', `../src/api/fetch_ads.php?last_id=${lastLoadedAdId}&sort=${getSortFilter()}`);
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.length > 0) {
-                        lastLoadedAdId = data[data.length - 1].id;
-                        data.forEach(ad => appendAdCard(ad));
-                    }
-                }
-            };
-            xhr.send();
-        }
-
-        // Append Ad Card
-        function appendAdCard(ad) {
-            const card = document.createElement('div');
-            card.className = 'listing-card';
-            card.innerHTML = `
-                <h5>${ad.ad_type.toUpperCase()} Ad</h5>
-                <p><strong>Price:</strong> $${ad.price.toFixed(2)}</p>
-                <p><strong>Percentage Over Market:</strong> ${ad.percentage}%</p>
-                <button class="btn btn-${ad.ad_type === 'buy' ? 'primary' : 'success'}" onclick="goToOrder(${ad.id})">
-                    ${ad.ad_type === 'buy' ? 'Buy' : 'Sell'}
-                </button>
-            `;
-            adListings.appendChild(card);
-        }
-
-        // Redirect to Order Page
-        function goToOrder(adId) {
-            window.location.href = `../public/${adId.ad_type}_xmr.php?ad_id=${adId}`;
-        }
-
-        // Filter Logic
-        function getSortFilter() {
-            return document.getElementById('sortFilter').value;
-        }
-
-        document.getElementById('sortFilter').addEventListener('change', () => {
-            adListings.innerHTML = '';
-            lastLoadedAdId = 0;
-            fetchAds();
-        });
-
-        // Infinite Scrolling
-        adListings.addEventListener('scroll', () => {
-            if (adListings.scrollTop + adListings.clientHeight >= adListings.scrollHeight) {
-                fetchAds();
+        // Infinite Scroll
+        window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+                loadAds();
             }
         });
 
         // Header Show/Hide on Scroll
+        let lastScroll = 0;
+        const header = document.getElementById('header');
         window.addEventListener('scroll', () => {
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            if (scrollTop > lastScrollTop) {
+            const currentScroll = window.scrollY;
+            if (currentScroll > lastScroll && currentScroll > 60) {
                 header.classList.add('hidden');
             } else {
                 header.classList.remove('hidden');
             }
-            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            lastScroll = currentScroll;
         });
 
+        // Filter Ads
+        function filterAds(type) {
+            currentFilter = type;
+            lastId = 0; // Reset ID for new filter
+            document.getElementById('ad-listings').innerHTML = ''; // Clear previous ads
+            loadAds();
+        }
+
+        // Load Ads Dynamically
+        async function loadAds() {
+            try {
+                const response = await fetch(`../src/api/fetch_ads.php?last_id=${lastId}&sort=${currentFilter}`);
+                const ads = await response.json();
+
+                if (ads.length > 0) {
+                    lastId = ads[ads.length - 1].id; // Update last ID
+                    ads.forEach(ad => {
+                        const adCard = document.createElement('div');
+                        adCard.className = 'ad-card';
+                        adCard.innerHTML = `
+                            <div>
+                                <p><strong>${ad.ad_type.toUpperCase()}</strong></p>
+                                <p>Price: $${ad.price} (${ad.percentage}% over market)</p>
+                            </div>
+                            <button class="btn btn-${ad.ad_type === 'buy' ? 'primary' : 'secondary'}" onclick="location.href='${ad.ad_type}_xmr.php?ad_id=${ad.id}'">
+                                ${ad.ad_type === 'buy' ? 'Buy' : 'Sell'}
+                            </button>
+                        `;
+                        document.getElementById('ad-listings').appendChild(adCard);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading ads:', error);
+            }
+        }
+
         // Initial Load
-        fetchAds();
+        loadAds();
     </script>
 </body>
 </html>
