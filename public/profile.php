@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Include database connection
-require '../src/config/db.php'; // Adjusted path for public folder
+require '../src/config/db.php';
 
 // Fetch user details
 $user_id = $_SESSION['user_id'];
@@ -45,6 +45,12 @@ $sell_ads = $sell_ads_stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             background-color: #f8f9fa;
         }
+        .balance-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
         .balance-toggle {
             cursor: pointer;
         }
@@ -72,10 +78,13 @@ $sell_ads = $sell_ads_stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <div class="container">
-        <!-- Account Balance -->
-        <div class="d-flex justify-content-end mt-4">
+        <!-- Account Balance and Deposit -->
+        <div class="balance-section">
+            <button class="btn btn-primary" onclick="location.href='deposit.php'">
+                <i class="bi bi-wallet"></i> Deposit
+            </button>
             <h3 id="balance" class="balance-toggle">
-                <?php echo number_format($user['total_traded_amount'], 18); ?> XMR
+                <?php echo number_format($user['total_traded_amount'], 12); ?> XMR
             </h3>
         </div>
 
@@ -105,7 +114,7 @@ $sell_ads = $sell_ads_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <h5>Buy Ads</h5>
                 <?php foreach ($buy_ads as $ad) { ?>
                     <div class="ad-card">
-                        <p><strong>Price:</strong> <?php echo $ad['price']; ?> USD/XMR</p>
+                        <p><strong>Price:</strong> <?php echo isset($ad['price']) ? number_format($ad['price'], 2) : 'N/A'; ?> USD/XMR</p>
                         <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($ad['payment_method']); ?></p>
                         <button class="btn btn-primary" onclick="location.href='order.php?ad_id=<?php echo $ad['id']; ?>'">Buy</button>
                     </div>
@@ -117,7 +126,7 @@ $sell_ads = $sell_ads_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <h5>Sell Ads</h5>
                 <?php foreach ($sell_ads as $ad) { ?>
                     <div class="ad-card">
-                        <p><strong>Price:</strong> <?php echo $ad['price']; ?> USD/XMR</p>
+                        <p><strong>Price:</strong> <?php echo isset($ad['price']) ? number_format($ad['price'], 2) : 'N/A'; ?> USD/XMR</p>
                         <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($ad['payment_method']); ?></p>
                         <button class="btn btn-success" onclick="location.href='order.php?ad_id=<?php echo $ad['id']; ?>'">Sell</button>
                     </div>
@@ -137,7 +146,7 @@ $sell_ads = $sell_ads_stmt->fetchAll(PDO::FETCH_ASSOC);
             if (inXMR) {
                 balance.textContent = `${(amount * usdRate).toFixed(2)} USD`;
             } else {
-                balance.textContent = `${amount.toFixed(18)} XMR`;
+                balance.textContent = `${amount.toFixed(12)} XMR`;
             }
             inXMR = !inXMR;
         });
