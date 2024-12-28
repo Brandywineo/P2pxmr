@@ -1,0 +1,33 @@
+<?php
+session_start();
+
+// Include database connection
+require '../src/config/db.php';
+
+header('Content-Type: application/json');
+
+// Fetch the latest rate from the database
+try {
+    $stmt = $pdo->query("SELECT usd_rate FROM rates ORDER BY updated_at DESC LIMIT 1");
+    $rate = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($rate) {
+        $response = [
+            'success' => true,
+            'rate' => (float) $rate['usd_rate'],
+        ];
+    } else {
+        $response = [
+            'success' => false,
+            'message' => 'Rate not available.',
+        ];
+    }
+} catch (Exception $e) {
+    $response = [
+        'success' => false,
+        'message' => 'Error fetching rate: ' . $e->getMessage(),
+    ];
+}
+
+// Return the response as JSON
+echo json_encode($response);
